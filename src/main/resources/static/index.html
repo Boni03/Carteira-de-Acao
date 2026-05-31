@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Carteira de Ação</title>
+  <meta name="description" content="Painel de gestão de corretoras e ações" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📈</text></svg>" />
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-logo">📈</div>
+        <div class="brand-text">
+          <strong>Carteira</strong>
+          <span>de Ação</span>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-ico">▦</span> Visão geral
+        </button>
+        <button class="nav-item" data-view="acoes">
+          <span class="nav-ico">📊</span> Ações
+        </button>
+        <button class="nav-item" data-view="corretoras">
+          <span class="nav-ico">🏦</span> Corretoras
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <a class="sidebar-link" href="/swagger-ui/index.html" target="_blank" rel="noopener">API Docs ↗</a>
+        <span class="api-status" id="apiStatus"><i class="dot"></i> Verificando…</span>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <header class="topbar">
+        <button class="hamburger" id="menuToggle" aria-label="Menu">☰</button>
+        <div class="topbar-title">
+          <h1 id="viewTitle">Visão geral</h1>
+          <p id="viewSubtitle">Resumo da sua carteira e instituições cadastradas</p>
+        </div>
+        <button class="btn btn-ghost" id="refreshAll" title="Atualizar dados">⟳ Atualizar</button>
+      </header>
+
+      <!-- ===================== DASHBOARD ===================== -->
+      <section class="view" id="view-dashboard">
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-ico" style="--c:#6366f1">📊</div>
+            <div>
+              <span class="stat-label">Ações na carteira</span>
+              <strong class="stat-value" id="statAcoes">—</strong>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-ico" style="--c:#10b981">🏦</div>
+            <div>
+              <span class="stat-label">Corretoras</span>
+              <strong class="stat-value" id="statCorretoras">—</strong>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-ico" style="--c:#f59e0b">🇧🇷</div>
+            <div>
+              <span class="stat-label">Mercado Brasil</span>
+              <strong class="stat-value" id="statBrasil">—</strong>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-ico" style="--c:#3b82f6">🇺🇸</div>
+            <div>
+              <span class="stat-label">Mercado EUA</span>
+              <strong class="stat-value" id="statEua">—</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Ações recentes</h2>
+            <button class="btn btn-sm" data-goto="acoes">Ver todas →</button>
+          </div>
+          <div id="dashAcoes" class="mini-list"></div>
+        </div>
+      </section>
+
+      <!-- ===================== AÇÕES ===================== -->
+      <section class="view hidden" id="view-acoes">
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><h2>Cadastrar ação</h2></div>
+            <form id="formAcao" class="form">
+              <label class="field">
+                <span>Ticker</span>
+                <input name="ticker" placeholder="Ex.: PETR4 ou AAPL" autocomplete="off" required />
+              </label>
+              <label class="field">
+                <span>Mercado</span>
+                <select name="mercado" required>
+                  <option value="BRASIL">🇧🇷 Brasil (B3)</option>
+                  <option value="EUA">🇺🇸 Estados Unidos</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>Corretora (opcional)</span>
+                <select name="corretoraId" id="selectCorretora">
+                  <option value="">Sem corretora vinculada</option>
+                </select>
+              </label>
+              <button class="btn btn-primary" type="submit" id="btnSalvarAcao">Cadastrar ação</button>
+              <p class="form-hint">A cotação e o nome da empresa são buscados automaticamente nas APIs externas.</p>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Buscar ação</h2></div>
+            <form id="formBuscaAcao" class="form-inline">
+              <input id="buscaTicker" placeholder="Buscar por ticker (ex.: PETR4)" autocomplete="off" />
+              <button class="btn" type="submit">Buscar</button>
+            </form>
+            <div id="buscaAcaoResultado" class="search-result"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Carteira de ações <span class="count-badge" id="countAcoes">0</span></h2>
+            <input class="filter-input" id="filterAcoes" placeholder="Filtrar…" />
+          </div>
+          <div class="table-wrap">
+            <table class="table" id="tableAcoes">
+              <thead>
+                <tr>
+                  <th>Ticker</th><th>Empresa</th><th>Mercado</th>
+                  <th class="num">Cotação</th><th>Atualizado em</th><th>Corretora</th><th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="empty hidden" id="emptyAcoes">Nenhuma ação cadastrada ainda.</div>
+        </div>
+      </section>
+
+      <!-- ===================== CORRETORAS ===================== -->
+      <section class="view hidden" id="view-corretoras">
+        <div class="grid-2">
+          <div class="panel">
+            <div class="panel-head"><h2>Cadastrar corretora</h2></div>
+            <form id="formCorretora" class="form">
+              <label class="field">
+                <span>CNPJ</span>
+                <input name="cnpj" placeholder="14 dígitos (somente números)" inputmode="numeric" maxlength="18" required />
+              </label>
+              <label class="field">
+                <span>CEP</span>
+                <input name="cep" placeholder="8 dígitos (somente números)" inputmode="numeric" maxlength="9" required />
+              </label>
+              <div class="field-row">
+                <label class="field">
+                  <span>Número</span>
+                  <input name="numero" placeholder="Ex.: 1000" maxlength="20" />
+                </label>
+                <label class="field">
+                  <span>Complemento</span>
+                  <input name="complemento" placeholder="Ex.: Torre XP" maxlength="100" />
+                </label>
+              </div>
+              <button class="btn btn-primary" type="submit" id="btnSalvarCorretora">Cadastrar corretora</button>
+              <p class="form-hint">Validamos CNPJ, situação cadastral, CVM e endereço via integrações externas.</p>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head"><h2>Buscar corretora</h2></div>
+            <form id="formBuscaCorretora" class="form-inline">
+              <input id="buscaCnpj" placeholder="Buscar por CNPJ" inputmode="numeric" autocomplete="off" />
+              <button class="btn" type="submit">Buscar</button>
+            </form>
+            <div id="buscaCorretoraResultado" class="search-result"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>Corretoras cadastradas <span class="count-badge" id="countCorretoras">0</span></h2>
+            <input class="filter-input" id="filterCorretoras" placeholder="Filtrar…" />
+          </div>
+          <div id="cardsCorretoras" class="cards"></div>
+          <div class="empty hidden" id="emptyCorretoras">Nenhuma corretora cadastrada ainda.</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Detalhe modal -->
+  <div class="modal-backdrop hidden" id="modal">
+    <div class="modal">
+      <button class="modal-close" id="modalClose">✕</button>
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+  <div class="toasts" id="toasts"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -80,9 +80,18 @@ public class BrapiCotacaoAdapter implements CotacaoPort {
 			String nome = ativo.hasNonNull("longName") ? ativo.get("longName").asText()
 					: (ativo.hasNonNull("shortName") ? ativo.get("shortName").asText() : null);
 
-			long epoch = ativo.hasNonNull("regularMarketTime")
-					? ativo.get("regularMarketTime").asLong()
-					: System.currentTimeMillis() / 1000;
+			long epoch = 0;
+			if (ativo.hasNonNull("regularMarketTime")) {
+				JsonNode timeNode = ativo.get("regularMarketTime");
+				if (timeNode.isNumber()) {
+					epoch = timeNode.asLong();
+				} else if (timeNode.isTextual()) {
+					try { epoch = Long.parseLong(timeNode.asText().trim()); } catch (NumberFormatException ignored) {}
+				}
+			}
+			if (epoch <= 0) {
+				epoch = System.currentTimeMillis() / 1000;
+			}
 
 			return new CotacaoExterna(
 					tickerNormalizado,
