@@ -1,6 +1,6 @@
 # Carteira de Ação
 
-API REST em **Java Spring Boot** para gestão de corretoras e ações financeiras, com integração a APIs públicas para validação e enriquecimento de dados.
+API REST em **Java Spring Boot** para gestão de corretoras e ações financeiras, com integração a APIs públicas para validação e enriquecimento de dados. Inclui **painel web completo** (HTML/CSS/JS) servido pela própria aplicação.
 
 ## Requisitos
 
@@ -41,8 +41,47 @@ O arquivo `application-local.properties` está no `.gitignore` e não deve ser c
 ```
 
 - API: `http://localhost:8080`
+- **Painel Web (Frontend):** `http://localhost:8080/painel`
 - Swagger UI: `http://localhost:8080/swagger-ui.html`
 - Console H2: `http://localhost:8080/h2-console` (JDBC: `jdbc:h2:mem:carteira`, user `sa`, senha vazia)
+
+## Testar o Frontend
+
+O painel web está em `src/main/resources/static/` e é servido automaticamente pelo Spring Boot.
+
+### Passo a passo
+
+1. **Inicie a aplicação:**
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+2. **Acesse o painel:** abra `http://localhost:8080/painel` no navegador.
+
+3. **Cadastre uma corretora** (não precisa de token):
+   - Vá na aba **Corretoras**
+   - Preencha CNPJ, CEP, número e complemento
+   - Exemplo: CNPJ `02332886000104`, CEP `04543011`, Número `1000`
+   - O sistema valida CNPJ, situação cadastral, CVM e endereço automaticamente
+
+4. **Cadastre uma ação** (precisa de token da Brapi):
+   - Configure o token em `application-local.properties`
+   - Vá na aba **Ações**
+   - Preencha o ticker (ex: `PETR4`) e selecione o mercado **Brasil**
+   - A cotação e o nome da empresa são buscados automaticamente
+
+5. **Funcionalidades do painel:**
+   - **Visão geral:** cards com totais de ações, corretoras e distribuição por mercado
+   - **Ações:** cadastrar, buscar por ticker, atualizar cotação, filtrar e ver detalhes
+   - **Corretoras:** cadastrar, buscar por CNPJ, filtrar e ver detalhes completos
+   - Toasts de sucesso/erro e indicador de status da API
+
+### Tokens gratuitos
+
+| Integração | URL para obter token | Uso |
+|------------|----------------------|-----|
+| Brapi (Brasil/B3) | https://brapi.dev | Cotação de ações brasileiras |
+| Alpha Vantage (EUA) | https://www.alphavantage.co/support/#api-key | Cotação de ações americanas |
 
 ## Endpoints
 
@@ -93,6 +132,19 @@ O arquivo `application-local.properties` está no `.gitignore` e não deve ser c
   "mercado": "EUA"
 }
 ```
+
+## Frontend
+
+O frontend é uma SPA (Single Page Application) servida como conteúdo estático pelo Spring Boot:
+
+| Arquivo | Descrição |
+|---------|-----------|
+| `src/main/resources/static/index.html` | Estrutura do painel |
+| `src/main/resources/static/styles.css` | Tema escuro moderno e responsivo |
+| `src/main/resources/static/app.js` | Lógica de consumo da API e interação |
+| `FrontendController.java` | Atalhos `/painel`, `/app`, `/dashboard` |
+
+A rota raiz `/` continua retornando o JSON de informações da API.
 
 ## APIs externas utilizadas
 
