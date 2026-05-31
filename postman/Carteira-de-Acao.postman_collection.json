@@ -1,0 +1,130 @@
+{
+	"info": {
+		"_postman_id": "carteira-de-acao-api",
+		"name": "Carteira de Ação API",
+		"description": "Coleção para testar a API REST.\n\nBase URL: http://localhost:8080\n\nOrdem: 1) Cadastrar corretora  2) PETR4  3) aguardar 12s  4) AAPL",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{"key": "baseUrl", "value": "http://localhost:8080"},
+		{"key": "corretoraId", "value": "1"},
+		{"key": "acaoId", "value": "1"},
+		{"key": "cnpj", "value": "02332886000104"},
+		{"key": "tickerBr", "value": "PETR4"}
+	],
+	"item": [
+		{
+			"name": "Corretoras",
+			"item": [
+				{
+					"name": "Cadastrar corretora",
+					"event": [{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"if (pm.response.code === 201) {",
+								"    const j = pm.response.json();",
+								"    pm.collectionVariables.set('corretoraId', j.id);",
+								"    pm.collectionVariables.set('cnpj', j.cnpj);",
+								"}"
+							],
+							"type": "text/javascript"
+						}
+					}],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cnpj\": \"02332886000104\",\n  \"cep\": \"04543011\",\n  \"numero\": \"1000\",\n  \"complemento\": \"Torre XP\"\n}"
+						},
+						"url": "{{baseUrl}}/corretoras"
+					}
+				},
+				{
+					"name": "Listar corretoras",
+					"request": {"method": "GET", "url": "{{baseUrl}}/corretoras"}
+				},
+				{
+					"name": "Buscar por ID",
+					"request": {"method": "GET", "url": "{{baseUrl}}/corretoras/{{corretoraId}}"}
+				},
+				{
+					"name": "Buscar por CNPJ",
+					"request": {"method": "GET", "url": "{{baseUrl}}/corretoras/cnpj/{{cnpj}}"}
+				}
+			]
+		},
+		{
+			"name": "Ações",
+			"item": [
+				{
+					"name": "Cadastrar PETR4 (BRASIL)",
+					"event": [{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"if (pm.response.code === 201) {",
+								"    const j = pm.response.json();",
+								"    pm.collectionVariables.set('acaoId', j.id);",
+								"    pm.collectionVariables.set('tickerBr', j.ticker);",
+								"}"
+							],
+							"type": "text/javascript"
+						}
+					}],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ticker\": \"PETR4\",\n  \"mercado\": \"BRASIL\",\n  \"corretoraId\": {{corretoraId}}\n}"
+						},
+						"url": "{{baseUrl}}/acoes"
+					}
+				},
+				{
+					"name": "Cadastrar AAPL (EUA)",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"ticker\": \"AAPL\",\n  \"mercado\": \"EUA\"\n}"
+						},
+						"url": "{{baseUrl}}/acoes"
+					}
+				},
+				{
+					"name": "Listar ações",
+					"request": {"method": "GET", "url": "{{baseUrl}}/acoes"}
+				},
+				{
+					"name": "Buscar por ID",
+					"request": {"method": "GET", "url": "{{baseUrl}}/acoes/{{acaoId}}"}
+				},
+				{
+					"name": "Buscar por ticker",
+					"request": {"method": "GET", "url": "{{baseUrl}}/acoes/ticker/{{tickerBr}}"}
+				},
+				{
+					"name": "Atualizar cotação",
+					"request": {"method": "PUT", "url": "{{baseUrl}}/acoes/{{acaoId}}/atualizar-cotacao"}
+				}
+			]
+		},
+		{
+			"name": "Início",
+			"item": [
+				{
+					"name": "GET / (info API)",
+					"request": {"method": "GET", "url": "{{baseUrl}}/"}
+				},
+				{
+					"name": "Swagger UI",
+					"request": {"method": "GET", "url": "{{baseUrl}}/swagger-ui/index.html"}
+				}
+			]
+		}
+	]
+}
