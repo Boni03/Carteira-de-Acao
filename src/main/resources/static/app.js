@@ -10,6 +10,7 @@ const $$ = (s, ctx = document) => [...ctx.querySelectorAll(s)];
 const state = {
   acoes: [],
   corretoras: [],
+  operacoes: [],
 };
 
 /* ----------------------------- HTTP ------------------------------ */
@@ -88,6 +89,18 @@ function mercadoTag(m) {
     : `<span class="tag tag-br">🇧🇷 Brasil</span>`;
 }
 
+/* Formata resultado (lucro/prejuízo) com sinal, cor e percentual opcional */
+function fmtResultado(valor, moeda, percentual) {
+  if (valor == null) return '<span style="color:var(--txt-mute)">—</span>';
+  const n = Number(valor);
+  if (n === 0) return `<span class="pl pl-zero">${esc(fmtMoeda(0, moeda))}</span>`;
+  const cls = n > 0 ? "pl-pos" : "pl-neg";
+  const sinal = n > 0 ? "+" : "";
+  const pct = percentual != null ? ` <small>(${sinal}${Number(percentual).toFixed(2)}%)</small>` : "";
+  const ico = n > 0 ? "▲" : "▼";
+  return `<span class="pl ${cls}">${ico} ${sinal}${esc(fmtMoeda(Math.abs(n), moeda).replace(/^-/, ""))}${pct}</span>`;
+}
+
 /* --------------------------- Toasts ------------------------------ */
 function toast(titulo, msg = "", tipo = "ok") {
   const ico = tipo === "ok" ? "✅" : tipo === "err" ? "⛔" : "ℹ️";
@@ -105,8 +118,9 @@ function toast(titulo, msg = "", tipo = "ok") {
 
 /* ----------------------- Navegação de views ---------------------- */
 const VIEW_META = {
-  dashboard: ["Visão geral", "Resumo da sua carteira e instituições cadastradas"],
-  acoes: ["Ações", "Cadastre e acompanhe as cotações da sua carteira"],
+  dashboard: ["Visão geral", "Resumo da sua carteira e resultado dos investimentos"],
+  acoes: ["Ações", "Cadastre, compre e venda — acompanhe lucro e prejuízo"],
+  operacoes: ["Operações", "Histórico de compras e vendas com resultado realizado"],
   corretoras: ["Corretoras", "Instituições validadas via CNPJ, CEP e CVM"],
 };
 
@@ -121,11 +135,31 @@ function setView(view) {
 }
 
 /* ---------------------------- Render ----------------------------- */
+function moedaCarteira() {
+  // usa a moeda predominante da carteira para os totais do dashboard
+  const comPosicao = state.acoes.filter((a) => (a.quantidade || 0) > 0);
+  const base = comPosicao.length ? comPosicao : state.acoes;
+  const brl = base.filter((a) => a.moeda !== "USD").length;
+  const usd = base.filter((a) => a.moeda === "USD").length;
+  return usd > brl ? "USD" : "BRL";
+}
+
 function renderStats() {
   $("#statAcoes").textContent = state.acoes.length;
   $("#statCorretoras").textContent = state.corretoras.length;
-  $("#statBrasil").textContent = state.acoes.filter((a) => a.mercado === "BRASIL").length;
-  $("#statEua").textContent = state.acoes.filter((a) => a.mercado === "EUA").length;
+
+  const moeda = moedaCarteira();
+  const totInvestido = state.acoes.reduce((s, a) => s + Number(a.valorInvestido || 0), 0);
+  const totAtual = state.acoes.reduce((s, a) => s + Number(a.valorAtual || 0), 0);
+  const totNaoReal = state.acoes.reduce((s, a) => s + Number(a.lucroPrejuizoNaoRealizado || 0), 0);
+  const totReal = state.acoes.reduce((s, a) => s + Number(a.lucroPrejuizoRealizado || 0), 0);
+
+  $("#statInvestido").textContent = fmtMoeda(totInvestido, moeda);
+  $("#statValorAtual").textContent = fmtMoeda(totAtual, moeda);
+
+  const pctNaoReal = totInvestido > 0 ? (totNaoReal / totInvestido) * 100 : null;
+  $("#statNaoRealizado").innerHTML = fmtResultado(totNaoReal, moeda, pctNaoReal);
+  $("#statRealizado").innerHTML = fmtResultado(totReal, moeda, null);
 
   const dash = $("#dashAcoes");
   const recentes = [...state.acoes].slice(-6).reverse();
@@ -138,6 +172,7 @@ function renderStats() {
       <span class="m-ticker">${esc(a.ticker)}</span>
       <span class="m-name">${esc(a.nomeEmpresa || "—")}</span>
       ${mercadoTag(a.mercado)}
+      <span class="m-qtd">${(a.quantidade || 0) > 0 ? esc(a.quantidade) + " un." : "<span style='color:var(--txt-mute)'>sem posição</span>"}</span>
       <span class="m-price">${esc(fmtMoeda(a.cotacaoAtual, a.moeda))}</span>
     </div>`).join("");
 }
@@ -160,21 +195,62 @@ function renderAcoes() {
   $("#countAcoes").textContent = state.acoes.length;
   $("#emptyAcoes").classList.toggle("hidden", state.acoes.length > 0);
 
-  tbody.innerHTML = lista.map((a) => `
+  tbody.innerHTML = lista.map((a) => {
+    const temPosicao = (a.quantidade || 0) > 0;
+    const resultado = temPosicao
+      ? fmtResultado(a.lucroPrejuizoNaoRealizado, a.moeda, a.lucroPrejuizoNaoRealizadoPercentual)
+      : '<span style="color:var(--txt-mute)">—</span>';
+    return `
     <tr>
       <td class="ticker-cell">${esc(a.ticker)}</td>
       <td>${esc(a.nomeEmpresa || "—")}</td>
       <td>${mercadoTag(a.mercado)}</td>
       <td class="num price-cell">${esc(fmtMoeda(a.cotacaoAtual, a.moeda))}</td>
-      <td>${esc(fmtData(a.dataHoraCotacao))}</td>
-      <td>${a.corretoraId != null ? esc(nomeCorretora(a.corretoraId)) : '<span style="color:var(--txt-mute)">—</span>'}</td>
-      <td class="num">
+      <td class="num">${temPosicao ? esc(a.quantidade) : '<span style="color:var(--txt-mute)">0</span>'}</td>
+      <td class="num price-cell">${temPosicao ? esc(fmtMoeda(a.precoMedio, a.moeda)) : '<span style="color:var(--txt-mute)">—</span>'}</td>
+      <td class="num">${resultado}</td>
+      <td class="acoes-col">
+        <button class="btn btn-buy btn-icon" title="Comprar" data-buy="${a.id}">＋ Comprar</button>
+        <button class="btn btn-sell btn-icon" title="Vender" data-sell="${a.id}" ${temPosicao ? "" : "disabled"}>－ Vender</button>
         <button class="btn btn-icon" title="Atualizar cotação" data-refresh-acao="${a.id}">⟳</button>
         <button class="btn btn-icon" title="Detalhes" data-detail-acao="${a.id}">⤢</button>
       </td>
-    </tr>`).join("");
+    </tr>`;
+  }).join("");
 
   if (state.acoes.length && !lista.length) {
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">Nenhum resultado para o filtro.</td></tr>`;
+  }
+}
+
+function tipoTag(tipo) {
+  return tipo === "COMPRA"
+    ? '<span class="tag tag-buy">COMPRA</span>'
+    : '<span class="tag tag-sell">VENDA</span>';
+}
+
+function renderOperacoes() {
+  const filtro = $("#filterOperacoes").value.trim().toLowerCase();
+  const tbody = $("#tableOperacoes tbody");
+  const lista = state.operacoes.filter((o) =>
+    !filtro || (o.ticker || "").toLowerCase().includes(filtro)
+  );
+
+  $("#countOperacoes").textContent = state.operacoes.length;
+  $("#emptyOperacoes").classList.toggle("hidden", state.operacoes.length > 0);
+
+  tbody.innerHTML = lista.map((o) => `
+    <tr>
+      <td>${esc(fmtData(o.dataHora))}</td>
+      <td class="ticker-cell">${esc(o.ticker)}</td>
+      <td>${tipoTag(o.tipo)}</td>
+      <td class="num">${esc(o.quantidade)}</td>
+      <td class="num price-cell">${esc(fmtMoeda(o.precoUnitario, o.moeda))}</td>
+      <td class="num price-cell">${esc(fmtMoeda(o.valorTotal, o.moeda))}</td>
+      <td class="num">${o.tipo === "VENDA" ? fmtResultado(o.resultado, o.moeda, o.resultadoPercentual) : '<span style="color:var(--txt-mute)">—</span>'}</td>
+    </tr>`).join("");
+
+  if (state.operacoes.length && !lista.length) {
     tbody.innerHTML = `<tr><td colspan="7" class="empty">Nenhum resultado para o filtro.</td></tr>`;
   }
 }
@@ -225,14 +301,17 @@ function renderSelectCorretoras() {
 /* --------------------------- Carregar ---------------------------- */
 async function carregarTudo() {
   try {
-    const [acoes, corretoras] = await Promise.all([
+    const [acoes, corretoras, operacoes] = await Promise.all([
       api("/acoes"),
       api("/corretoras"),
+      api("/operacoes"),
     ]);
     state.acoes = acoes || [];
     state.corretoras = corretoras || [];
+    state.operacoes = operacoes || [];
     renderStats();
     renderAcoes();
+    renderOperacoes();
     renderCorretoras();
     renderSelectCorretoras();
     setApiStatus(true);
@@ -257,18 +336,24 @@ function abrirModal(html) {
 function fecharModal() { $("#modal").classList.add("hidden"); }
 
 function detalheAcaoHTML(a) {
+  const temPosicao = (a.quantidade || 0) > 0;
   return `
     <h2>${esc(a.ticker)} ${mercadoTag(a.mercado)}</h2>
     <p class="sub">${esc(a.nomeEmpresa || "Empresa não informada")}</p>
     <div class="detail-grid">
       <div class="detail-item"><span class="k">Cotação atual</span><span class="v price-cell">${esc(fmtMoeda(a.cotacaoAtual, a.moeda))}</span></div>
-      <div class="detail-item"><span class="k">Moeda</span><span class="v">${esc(a.moeda || "—")}</span></div>
-      <div class="detail-item"><span class="k">Atualizado em</span><span class="v">${esc(fmtData(a.dataHoraCotacao))}</span></div>
+      <div class="detail-item"><span class="k">Quantidade em carteira</span><span class="v">${temPosicao ? esc(a.quantidade) + " un." : "—"}</span></div>
+      <div class="detail-item"><span class="k">Preço médio</span><span class="v price-cell">${temPosicao ? esc(fmtMoeda(a.precoMedio, a.moeda)) : "—"}</span></div>
+      <div class="detail-item"><span class="k">Valor investido</span><span class="v">${temPosicao ? esc(fmtMoeda(a.valorInvestido, a.moeda)) : "—"}</span></div>
+      <div class="detail-item"><span class="k">Valor atual</span><span class="v">${temPosicao ? esc(fmtMoeda(a.valorAtual, a.moeda)) : "—"}</span></div>
+      <div class="detail-item"><span class="k">L/P não realizado</span><span class="v">${temPosicao ? fmtResultado(a.lucroPrejuizoNaoRealizado, a.moeda, a.lucroPrejuizoNaoRealizadoPercentual) : "—"}</span></div>
+      <div class="detail-item"><span class="k">L/P realizado</span><span class="v">${fmtResultado(a.lucroPrejuizoRealizado, a.moeda, null)}</span></div>
       <div class="detail-item"><span class="k">Corretora</span><span class="v">${a.corretoraId != null ? esc(nomeCorretora(a.corretoraId)) : "—"}</span></div>
-      <div class="detail-item"><span class="k">ID interno</span><span class="v">#${esc(a.id)}</span></div>
     </div>
-    <div style="margin-top:22px; display:flex; gap:10px">
-      <button class="btn btn-primary" data-refresh-acao="${a.id}">⟳ Atualizar cotação</button>
+    <div style="margin-top:22px; display:flex; gap:10px; flex-wrap:wrap">
+      <button class="btn btn-buy" data-buy="${a.id}">＋ Comprar</button>
+      <button class="btn btn-sell" data-sell="${a.id}" ${temPosicao ? "" : "disabled"}>－ Vender</button>
+      <button class="btn" data-refresh-acao="${a.id}">⟳ Atualizar cotação</button>
     </div>`;
 }
 
@@ -288,6 +373,95 @@ function detalheCorretoraHTML(c) {
       <div class="detail-item"><span class="k">CEP</span><span class="v">${esc(fmtCep(c.cep))}</span></div>
       <div class="detail-item"><span class="k">Cadastrada em</span><span class="v">${esc(fmtData(c.dataCadastro))}</span></div>
     </div>`;
+}
+
+/* ----------------------- Modal de operação ----------------------- */
+function abrirOperacaoModal(acaoId, tipo) {
+  const a = state.acoes.find((x) => x.id === acaoId);
+  if (!a) return;
+  const isCompra = tipo === "COMPRA";
+  const temPosicao = (a.quantidade || 0) > 0;
+  const cotacao = a.cotacaoAtual != null ? Number(a.cotacaoAtual) : "";
+
+  const posicaoInfo = temPosicao
+    ? `<div class="op-info">Posição atual: <b>${esc(a.quantidade)} un.</b> a preço médio de <b>${esc(fmtMoeda(a.precoMedio, a.moeda))}</b></div>`
+    : `<div class="op-info">Sem posição atual nesta ação.</div>`;
+
+  abrirModal(`
+    <h2>${isCompra ? "Comprar" : "Vender"} ${esc(a.ticker)} ${tipoTag(tipo)}</h2>
+    <p class="sub">${esc(a.nomeEmpresa || "")}</p>
+    ${posicaoInfo}
+    <form id="formOperacao" class="form" data-acao="${a.id}" data-tipo="${tipo}" data-moeda="${esc(a.moeda)}">
+      <label class="field">
+        <span>Quantidade${isCompra ? "" : ` (máx. ${a.quantidade})`}</span>
+        <input name="quantidade" type="number" min="1" ${isCompra ? "" : `max="${a.quantidade}"`} step="1" placeholder="Ex.: 100" required />
+      </label>
+      <label class="field">
+        <span>Preço unitário (opcional)</span>
+        <input name="precoUnitario" type="number" min="0" step="0.01" value="${cotacao}" placeholder="Usa a cotação atual se vazio" />
+      </label>
+      <div class="op-resumo" id="opResumo"></div>
+      <button class="btn ${isCompra ? "btn-buy" : "btn-sell"}" type="submit" id="btnOperacao">
+        ${isCompra ? "Confirmar compra" : "Confirmar venda"}
+      </button>
+      ${isCompra
+        ? '<p class="form-hint">A compra recalcula o preço médio da sua posição.</p>'
+        : '<p class="form-hint">A venda calcula o lucro/prejuízo: (preço de venda − preço médio) × quantidade.</p>'}
+    </form>
+  `);
+
+  const form = $("#formOperacao");
+  const calcResumo = () => {
+    const qtd = Number(form.quantidade.value || 0);
+    const preco = form.precoUnitario.value !== "" ? Number(form.precoUnitario.value) : Number(a.cotacaoAtual || 0);
+    const box = $("#opResumo");
+    if (!qtd || qtd <= 0 || !preco) { box.innerHTML = ""; return; }
+    const total = qtd * preco;
+    let html = `<div class="op-resumo-row"><span>Valor total</span><b>${esc(fmtMoeda(total, a.moeda))}</b></div>`;
+    if (!isCompra && temPosicao) {
+      const resultado = (preco - Number(a.precoMedio)) * qtd;
+      html += `<div class="op-resumo-row"><span>Resultado estimado</span><b>${fmtResultado(resultado, a.moeda, null)}</b></div>`;
+    }
+    box.innerHTML = html;
+  };
+  form.quantidade.addEventListener("input", calcResumo);
+  form.precoUnitario.addEventListener("input", calcResumo);
+  calcResumo();
+  form.addEventListener("submit", submitOperacao);
+  setTimeout(() => form.quantidade.focus(), 50);
+}
+
+async function submitOperacao(e) {
+  e.preventDefault();
+  const form = e.target;
+  const acaoId = Number(form.dataset.acao);
+  const tipo = form.dataset.tipo;
+  const btn = $("#btnOperacao");
+
+  const quantidade = Number(form.quantidade.value);
+  if (!quantidade || quantidade <= 0) return toast("Validação", "Informe uma quantidade válida.", "err");
+
+  const body = { quantidade };
+  if (form.precoUnitario.value !== "") body.precoUnitario = Number(form.precoUnitario.value);
+
+  const endpoint = tipo === "COMPRA" ? "comprar" : "vender";
+  setLoading(btn, true, tipo === "COMPRA" ? "Comprando…" : "Vendendo…");
+  try {
+    const op = await api(`/acoes/${acaoId}/${endpoint}`, { method: "POST", body: JSON.stringify(body) });
+    if (tipo === "VENDA") {
+      const r = Number(op.resultado);
+      const txt = r >= 0 ? `Lucro de ${fmtMoeda(r, op.moeda)}` : `Prejuízo de ${fmtMoeda(Math.abs(r), op.moeda)}`;
+      toast(`Venda de ${op.ticker}`, txt, r >= 0 ? "ok" : "err");
+    } else {
+      toast(`Compra de ${op.ticker}`, `${op.quantidade} un. por ${fmtMoeda(op.valorTotal, op.moeda)}`, "ok");
+    }
+    fecharModal();
+    await carregarTudo();
+  } catch (err) {
+    toast(tipo === "COMPRA" ? "Falha na compra" : "Falha na venda", err.message, "err");
+  } finally {
+    setLoading(btn, false, tipo === "COMPRA" ? "Confirmar compra" : "Confirmar venda");
+  }
 }
 
 /* ------------------------- Ações: submit ------------------------- */
@@ -337,7 +511,10 @@ async function atualizarCotacao(id) {
     const a = await api(`/acoes/${id}/atualizar-cotacao`, { method: "PUT" });
     toast("Cotação atualizada", `${a.ticker} — ${fmtMoeda(a.cotacaoAtual, a.moeda)}`, "ok");
     await carregarTudo();
-    if (!$("#modal").classList.contains("hidden")) abrirModal(detalheAcaoHTML(a));
+    if (!$("#modal").classList.contains("hidden")) {
+      const atualizada = state.acoes.find((x) => x.id === id) || a;
+      abrirModal(detalheAcaoHTML(atualizada));
+    }
   } catch (err) {
     toast("Falha ao atualizar", err.message, "err");
   }
@@ -387,6 +564,7 @@ async function buscarCorretora(e) {
 
 /* ----------------------------- UI helpers ------------------------ */
 function setLoading(btn, loading, label) {
+  if (!btn) return;
   btn.disabled = loading;
   btn.innerHTML = loading ? `<span class="spin"></span> ${label}` : label;
 }
@@ -404,6 +582,7 @@ function bind() {
   $("#formBuscaCorretora").addEventListener("submit", buscarCorretora);
 
   $("#filterAcoes").addEventListener("input", renderAcoes);
+  $("#filterOperacoes").addEventListener("input", renderOperacoes);
   $("#filterCorretoras").addEventListener("input", renderCorretoras);
 
   $("#modalClose").addEventListener("click", fecharModal);
@@ -412,6 +591,12 @@ function bind() {
 
   // Delegação para botões dinâmicos
   document.addEventListener("click", (e) => {
+    const buy = e.target.closest("[data-buy]");
+    if (buy) { abrirOperacaoModal(Number(buy.dataset.buy), "COMPRA"); return; }
+
+    const sell = e.target.closest("[data-sell]");
+    if (sell && !sell.disabled) { abrirOperacaoModal(Number(sell.dataset.sell), "VENDA"); return; }
+
     const r = e.target.closest("[data-refresh-acao]");
     if (r) { atualizarCotacao(Number(r.dataset.refreshAcao)); return; }
 

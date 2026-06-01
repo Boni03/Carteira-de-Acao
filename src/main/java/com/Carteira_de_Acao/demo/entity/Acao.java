@@ -43,6 +43,18 @@ public class Acao {
 	@JoinColumn(name = "corretora_id")
 	private Corretora corretoraRelacionada;
 
+	/** Quantidade de papéis atualmente em carteira. */
+	@Column(nullable = false)
+	private Integer quantidade = 0;
+
+	/** Preço médio de compra da posição atual (base de custo). */
+	@Column(precision = 19, scale = 4)
+	private BigDecimal precoMedio = BigDecimal.ZERO;
+
+	/** Lucro/prejuízo já realizado acumulado (somatório das vendas). */
+	@Column(precision = 19, scale = 2)
+	private BigDecimal lucroPrejuizoRealizado = BigDecimal.ZERO;
+
 	public Long getId() {
 		return id;
 	}
@@ -105,5 +117,29 @@ public class Acao {
 
 	public void setCorretoraRelacionada(Corretora corretoraRelacionada) {
 		this.corretoraRelacionada = corretoraRelacionada;
+	}
+
+	public Integer getQuantidade() {
+		return quantidade == null ? 0 : quantidade;
+	}
+
+	public void setQuantidade(Integer quantidade) {
+		this.quantidade = quantidade;
+	}
+
+	public BigDecimal getPrecoMedio() {
+		return precoMedio == null ? BigDecimal.ZERO : precoMedio;
+	}
+
+	public void setPrecoMedio(BigDecimal precoMedio) {
+		this.precoMedio = precoMedio;
+	}
+
+	public BigDecimal getLucroPrejuizoRealizado() {
+		return lucroPrejuizoRealizado == null ? BigDecimal.ZERO : lucroPrejuizoRealizado;
+	}
+
+	public void setLucroPrejuizoRealizado(BigDecimal lucroPrejuizoRealizado) {
+		this.lucroPrejuizoRealizado = lucroPrejuizoRealizado;
 	}
 }
