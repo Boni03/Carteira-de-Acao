@@ -17,7 +17,8 @@ public record OperacaoResponse(
 		BigDecimal valorTotal,
 		LocalDateTime dataHora,
 		BigDecimal resultado,
-		BigDecimal resultadoPercentual
+		BigDecimal resultadoPercentual,
+		BigDecimal precoMedio
 ) {
 
 	public static OperacaoResponse from(Operacao op) {
@@ -45,6 +46,7 @@ public record OperacaoResponse(
 				op.getValorTotal(),
 				op.getDataHora(),
 				op.getResultado(),
-				percentual);
+				percentual,
+				op.getPrecoMedioNaOperacao());
 	}
 }

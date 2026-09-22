@@ -1,100 +1,279 @@
-# Carteira de Ação
+# Carteira de Ações
 
-API REST em **Java Spring Boot** para gestão de corretoras e ações financeiras, com integração a APIs públicas para validação e enriquecimento de dados. Inclui **painel web completo** (HTML/CSS/JS) servido pela própria aplicação.
+API REST em **Java 17 + Spring Boot 3.5.14** para gestão de uma carteira de investimentos em ações, com cadastro de corretoras validado por APIs públicas, cotações de mercado (Brasil e EUA), registro de operações de compra e venda, cálculo de preço médio e apuração de resultado. Inclui um painel web estático servido pela própria aplicação.
 
-## Requisitos
+---
 
-- Java 17+
-- Maven 3.9+
+## Sobre o projeto
 
-## Configuração das chaves de API
+A aplicação expõe uma API REST (e um painel web que a consome) para:
 
-Copie o exemplo e preencha suas chaves (ou use variáveis de ambiente):
+- **Corretoras** — cadastro a partir apenas de CNPJ e CEP; os dados cadastrais (razão social, nome fantasia, e-mail, telefone, situação cadastral) e o endereço são obtidos em APIs públicas, e a instituição é validada como participante do mercado financeiro pelo CNAE principal.
+- **Ações** — cadastro por ticker + mercado (`BRASIL` ou `EUA`); nome da empresa, moeda e cotação vêm da API de cotações correspondente. A cotação pode ser atualizada sob demanda.
+- **Operações de compra e venda** — cada operação atualiza a posição da ação e fica registrada em histórico.
+- **Preço médio ponderado** — recalculado a cada compra.
+- **Resultado realizado** — calculado em cada venda como `(preço de venda − preço médio) × quantidade` e acumulado na ação.
+- **Resultado não realizado** — calculado na resposta da ação a partir da cotação atual versus o valor investido.
 
-```bash
-cp src/main/resources/application-local.properties.example src/main/resources/application-local.properties
+---
+
+## Tecnologias
+
+Tudo abaixo está declarado no `pom.xml`:
+
+| Tecnologia | Detalhe |
+|---|---|
+| Java | 17 (`java.version`) |
+| Spring Boot | 3.5.14 |
+| Spring Web | `spring-boot-starter-web` |
+| Spring Data JPA | `spring-boot-starter-data-jpa` (Hibernate) |
+| Bean Validation | `spring-boot-starter-validation` |
+| Spring Boot DevTools | escopo `runtime`, opcional |
+| H2 | banco em memória (perfil padrão) |
+| MySQL | driver `mysql-connector-j` (perfil `mysql`) |
+| PostgreSQL | driver `postgresql` (perfil `postgresql`) |
+| springdoc-openapi | 2.8.9 — Swagger UI / OpenAPI |
+| JUnit / Spring Test | `spring-boot-starter-test` |
+| Maven | build via `mvnw` / `mvnw.cmd` |
+| Docker / Docker Compose | `Dockerfile` multi-stage e `docker-compose.yml` |
+
+O front-end é HTML, CSS e JavaScript puros (`src/main/resources/static/`), sem framework ou build de Node.
+
+---
+
+## Arquitetura
+
+Fluxo principal:
+
+```
+Controller  →  Service  →  Repository  →  Entity  →  Banco de dados
+                  ↓
+            Ports & Adapters (integrações externas)
 ```
 
-```properties
-integracao.brapi.token=SUA_CHAVE_BRAPI
-integracao.alphavantage.api-key=SUA_CHAVE_ALPHAVANTAGE
+Pacotes em `com.Carteira_de_Acao.demo`:
+
+| Pacote | Conteúdo |
+|---|---|
+| `controller` | `AcaoController`, `CorretoraController`, `OperacaoController`, `HomeController`, `FrontendController` |
+| `service` | `AcaoService`, `CorretoraService`, `OperacaoService` — regras de negócio e transações |
+| `repository` | `AcaoRepository`, `CorretoraRepository`, `OperacaoRepository` (Spring Data JPA) |
+| `entity` | `Acao`, `Corretora`, `Operacao` |
+| `enums` | `Mercado` (BRASIL, EUA), `TipoOperacao` (COMPRA, VENDA) |
+| `dto` | `records` de request/response + `ErroResponse` |
+| `integration` | portas e adaptadores das APIs externas |
+| `exception` | exceções de domínio + `GlobalExceptionHandler` |
+| `config` | `RestClientConfig` (bean `RestClient.Builder`) |
+| `util` | `CnpjUtil` (dígitos verificadores), `CepUtil` |
+
+### Ports & adapters
+
+As integrações externas ficam atrás de interfaces, com um adaptador por provedor:
+
+```
+integration/
+  cep/      CepConsultaPort     → BrasilApiCepAdapter
+  cnpj/     CnpjConsultaPort    → BrasilApiCnpjAdapter
+  cvm/      CvmValidacaoPort    → CnaeCvmValidacaoAdapter
+  cotacao/  CotacaoPort         → BrapiCotacaoAdapter (BRASIL)
+                                → AlphaVantageCotacaoAdapter (EUA)
+            CotacaoServiceFacade — escolhe o adaptador pelo mercado
 ```
 
-Alternativa por variáveis de ambiente:
+### Validações
 
-- `BRAPI_TOKEN`
-- `ALPHAVANTAGE_API_KEY`
+- **Bean Validation** nos DTOs de entrada (`@NotBlank`, `@NotNull`, `@Positive`, `@Pattern`, `@Size`) — por exemplo, CNPJ com 14 dígitos e CEP com 8 dígitos.
+- **Regras de negócio** nos services: dígitos verificadores do CNPJ, formato do ticker por mercado (`AAAA9`/`AAAA99` para Brasil, 1 a 5 letras para EUA), situação cadastral ativa, unicidade de CNPJ e de ticker, posição suficiente para venda.
 
-O arquivo `application-local.properties` está no `.gitignore` e não deve ser commitado.
+### Tratamento de exceções
 
-## Executar
+`GlobalExceptionHandler` (`@RestControllerAdvice`) converte exceções em um corpo `ErroResponse` (`timestamp`, `status`, `erro`, `mensagem`, `path`, `detalhes`):
+
+| Exceção / situação | HTTP |
+|---|---|
+| `MethodArgumentNotValidException` (validação de DTO) | 400 |
+| `RecursoNaoEncontradoException`, rota inexistente | 404 |
+| `ConflitoException` (CNPJ ou ticker duplicado) | 409 |
+| `RegraNegocioException` | 422 |
+| `LimiteRequisicoesException` (rate limit das APIs) | 429 |
+| `IntegracaoExternaException` | 502 |
+| Demais exceções | 500 |
+
+---
+
+## Funcionalidades
+
+**Corretoras**
+- Cadastro informando apenas CNPJ, CEP, número e complemento.
+- Validação de formato e de dígitos verificadores do CNPJ; validação de formato do CEP.
+- Consulta de CNPJ (razão social, nome fantasia, e-mail, telefone, situação cadastral, CNAE principal).
+- Recusa de CNPJ com situação cadastral diferente de ATIVA.
+- Validação de participação no mercado financeiro pelo CNAE principal (grupos 6611, 6612, 6619 e correlatos).
+- Consulta de CEP para preencher logradouro, bairro, cidade e UF.
+- Listagem, busca por id, busca por CNPJ e exclusão — a exclusão é bloqueada quando há ações vinculadas à corretora.
+
+**Ações**
+- Cadastro por ticker + mercado, com vínculo opcional a uma corretora.
+- Normalização e validação do formato do ticker conforme o mercado.
+- Bloqueio de ticker duplicado.
+- Busca automática de nome da empresa, moeda e cotação na API do mercado correspondente.
+- Listagem, busca por id, busca por ticker e atualização de cotação sob demanda.
+- Cada resposta traz quantidade em carteira, preço médio, valor investido, valor atual, resultado não realizado (valor e percentual) e resultado realizado acumulado.
+
+**Operações**
+- Compra: recalcula o preço médio ponderado e aumenta a posição. O preço unitário é opcional — sem ele, usa-se a cotação atual da ação.
+- Venda: bloqueada quando não há posição ou quando a quantidade excede a posição atual; calcula o resultado realizado, acumula-o na ação e zera o preço médio quando a posição chega a zero.
+- Histórico por ação e histórico completo, ordenados da operação mais recente para a mais antiga.
+
+**Painel web**
+- Página única em `/painel` (também `/app` e `/dashboard`) com visão geral, ações, operações e corretoras, consumindo a própria API.
+
+---
+
+## Integrações externas
+
+| Finalidade | Serviço | Endpoint usado | Observações |
+|---|---|---|---|
+| Consulta de CNPJ | **BrasilAPI** | `GET /cnpj/v1/{cnpj}` | Dados da Receita Federal; fornece situação cadastral e CNAE principal. Não requer chave. |
+| Consulta de CEP | **BrasilAPI** | `GET /cep/v2/{cep}` | Logradouro, bairro, cidade e UF. Não requer chave. |
+| Validação CVM/CNAE | — (local) | — | `CnaeCvmValidacaoAdapter` avalia o CNAE principal retornado pela BrasilAPI; não há chamada HTTP adicional. |
+| Cotação — mercado BRASIL | **BRAPI** (`brapi.dev`) | `GET /quote/{ticker}?token=…` | Requer `BRAPI_TOKEN`. Retorna preço, moeda, nome da empresa e horário da cotação. |
+| Cotação — mercado EUA | **Alpha Vantage** | `GET /query?function=GLOBAL_QUOTE&symbol=…` | Requer `ALPHAVANTAGE_API_KEY`. Preço em USD; respostas de limite são mapeadas para HTTP 429. |
+
+As URLs base ficam em `application.yml` (`integracao.brasil-api.base-url`, `integracao.brapi.base-url`, `integracao.alphavantage.base-url`).
+
+---
+
+## Variáveis de ambiente
+
+Use o `.env.example` como modelo: copie-o para `.env` na raiz do projeto e preencha os valores. O `.env` está no `.gitignore` e no `.dockerignore`, ou seja, não é versionado nem enviado ao contexto de build da imagem.
+
+```env
+BRAPI_TOKEN=
+ALPHAVANTAGE_API_KEY=
+
+DB_HOST=
+DB_PORT=
+DB_NAME=
+DB_USER=
+DB_PASSWORD=
+```
+
+| Variável | Uso |
+|---|---|
+| `BRAPI_TOKEN` | Token da BRAPI, para cotações do mercado BRASIL. |
+| `ALPHAVANTAGE_API_KEY` | Chave da Alpha Vantage, para cotações do mercado EUA. |
+| `DB_HOST` | Host do banco. Usado nos perfis `mysql`/`postgresql`. No Docker Compose, o serviço `app` recebe `DB_HOST=db`, sobrescrevendo o valor do `.env`. |
+| `DB_PORT` | Porta do banco. No Compose é usada tanto na publicação da porta do PostgreSQL no host quanto na URL JDBC da aplicação — como o container do banco escuta em 5432, mantenha `DB_PORT=5432`. |
+| `DB_NAME` | Nome do banco (no Compose vira `POSTGRES_DB`). |
+| `DB_USER` | Usuário do banco (no Compose vira `POSTGRES_USER` e é usado no healthcheck). |
+| `DB_PASSWORD` | Senha do banco (no Compose vira `POSTGRES_PASSWORD`). |
+
+As variáveis de banco são necessárias apenas nos perfis `mysql` e `postgresql`; o perfil padrão (`h2`) não precisa delas.
+
+A aplicação importa o `.env` automaticamente quando executada fora do Docker, via `spring.config.import: optional:file:./.env[.properties]` — o arquivo é opcional.
+
+---
+
+## Perfis e bancos de dados
+
+Todos os perfis estão em `src/main/resources/application.yml`. O perfil ativo padrão é `h2`, com `local` incluído (`spring.profiles.include`).
+
+| Perfil | Banco | URL |
+|---|---|---|
+| `h2` (padrão) | H2 em memória, modo de compatibilidade PostgreSQL | `jdbc:h2:mem:carteira` (usuário `sa`, senha vazia) |
+| `mysql` | MySQL | `jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:carteira}` |
+| `postgresql` | PostgreSQL — perfil usado no Docker | `jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:carteira}` |
+
+Em todos os perfis o schema é gerenciado por `hibernate.ddl-auto: update`. O **H2 Console** fica habilitado apenas no perfil `h2`, em `/h2-console`.
+
+---
+
+## Como executar
+
+### Localmente (perfil padrão H2)
 
 ```bash
-# H2 (padrão)
 ./mvnw spring-boot:run
-
-# MySQL
-./mvnw spring-boot:run -Dspring-boot.run.profiles=h2,mysql
-
-# PostgreSQL
-./mvnw spring-boot:run -Dspring-boot.run.profiles=h2,postgresql
 ```
 
-- API: `http://localhost:8080`
-- **Painel Web (Frontend):** `http://localhost:8080/painel`
-- Swagger UI: `http://localhost:8080/swagger-ui.html`
-- Console H2: `http://localhost:8080/h2-console` (JDBC: `jdbc:h2:mem:carteira`, user `sa`, senha vazia)
+Outros perfis:
 
-## Testar o Frontend
+```bash
+./mvnw spring-boot:run -Dspring-boot.run.profiles=mysql
+./mvnw spring-boot:run -Dspring-boot.run.profiles=postgresql
+```
 
-O painel web está em `src/main/resources/static/` e é servido automaticamente pelo Spring Boot.
+Build do JAR:
 
-### Passo a passo
+```bash
+./mvnw clean package
+java -jar target/demo-0.0.1-SNAPSHOT.jar
+```
 
-1. **Inicie a aplicação:**
-   ```bash
-   ./mvnw spring-boot:run
-   ```
+### Com Docker
 
-2. **Acesse o painel:** abra `http://localhost:8080/painel` no navegador.
+A aplicação tem suporte completo a Docker.
 
-3. **Cadastre uma corretora** (não precisa de token):
-   - Vá na aba **Corretoras**
-   - Preencha CNPJ, CEP, número e complemento
-   - Exemplo: CNPJ `02332886000104`, CEP `04543011`, Número `1000`
-   - O sistema valida CNPJ, situação cadastral, CVM e endereço automaticamente
+**`Dockerfile` — build multi-stage:**
 
-4. **Cadastre uma ação** (precisa de token da Brapi):
-   - Configure o token em `application-local.properties`
-   - Vá na aba **Ações**
-   - Preencha o ticker (ex: `PETR4`) e selecione o mercado **Brasil**
-   - A cotação e o nome da empresa são buscados automaticamente
+1. Estágio `build` com a imagem `maven:3.9-eclipse-temurin-17`: copia o `pom.xml`, baixa as dependências (`mvn dependency:go-offline -B`), copia o `src` e gera o JAR com `mvn clean package -DskipTests`.
+2. Estágio final com `eclipse-temurin:17-jre-jammy` (Java 17, apenas JRE): copia o JAR do estágio anterior, expõe a porta **8080** e sobe com `java -jar app.jar`.
 
-5. **Funcionalidades do painel:**
-   - **Visão geral:** cards com totais de ações, corretoras e distribuição por mercado
-   - **Ações:** cadastrar, buscar por ticker, atualizar cotação, filtrar e ver detalhes
-   - **Corretoras:** cadastrar, buscar por CNPJ, filtrar e ver detalhes completos
-   - Toasts de sucesso/erro e indicador de status da API
+O `.dockerignore` mantém fora do contexto de build: `target/`, `.git/`, `.idea/`, `*.iml`, `.env` e `README.md`.
 
-### Tokens gratuitos
+**`docker-compose.yml`** sobe dois containers:
 
-| Integração | URL para obter token | Uso |
-|------------|----------------------|-----|
-| Brapi (Brasil/B3) | https://brapi.dev | Cotação de ações brasileiras |
-| Alpha Vantage (EUA) | https://www.alphavantage.co/support/#api-key | Cotação de ações americanas |
+| Serviço | Container | Imagem | Portas |
+|---|---|---|---|
+| `app` | `carteira-acoes-api` | build local do `Dockerfile` | `8080:8080` |
+| `db` | `carteira-acoes-db` | `postgres:16` | `${DB_PORT}:5432` |
+
+- O serviço `app` lê as variáveis do `.env` (`env_file`) e define `SPRING_PROFILES_ACTIVE=postgresql` e `DB_HOST=db` — a comunicação entre os containers acontece pelo nome do serviço `db` na rede criada pelo Compose.
+- O PostgreSQL tem **volume persistente** (`postgres_data` em `/var/lib/postgresql/data`) e **healthcheck** com `pg_isready -U ${DB_USER} -d ${DB_NAME}` (a cada 5s, timeout 5s, 10 tentativas).
+- O `app` declara `depends_on: db: condition: service_healthy`, ou seja, **só inicia depois que o PostgreSQL está saudável**.
+
+Subir tudo:
+
+```bash
+cp .env.example .env    # e preencha os valores
+docker compose up --build
+```
+
+Parar (mantendo os dados) ou remover também o volume:
+
+```bash
+docker compose down
+docker compose down -v
+```
+
+Fora do Docker o perfil continua sendo o `h2`; o perfil `postgresql` é ativado apenas dentro do container, pela variável de ambiente do Compose.
+
+---
 
 ## Endpoints
 
+Base: `http://localhost:8080`
+
+### Raiz e páginas
+
+| Método | Rota | Descrição |
+|---|---|---|
+| GET | `/` | JSON com nome da aplicação, link da documentação e endpoints principais |
+| GET | `/painel`, `/app`, `/dashboard` | Painel web (encaminha para `index.html`) |
+| GET | `/swagger-ui.html` | Swagger UI |
+| GET | `/api-docs` | Documento OpenAPI |
+| GET | `/h2-console` | Console do H2 (somente perfil `h2`) |
+
 ### Corretoras
 
-| Método | URL | Descrição |
-|--------|-----|-----------|
-| POST | `/corretoras` | Cadastra corretora (CNPJ + CEP validados externamente) |
-| GET | `/corretoras` | Lista corretoras |
-| GET | `/corretoras/{id}` | Busca por id |
-| GET | `/corretoras/cnpj/{cnpj}` | Busca por CNPJ |
-
-**Exemplo cadastro:**
+| Método | Rota | Descrição | Status |
+|---|---|---|---|
+| POST | `/corretoras` | Cadastra corretora a partir de CNPJ e CEP | 201 |
+| GET | `/corretoras` | Lista corretoras | 200 |
+| GET | `/corretoras/{id}` | Busca por id | 200 |
+| GET | `/corretoras/cnpj/{cnpj}` | Busca por CNPJ | 200 |
+| DELETE | `/corretoras/{id}` | Exclui corretora sem ações vinculadas | 204 |
 
 ```json
 {
@@ -107,92 +286,82 @@ O painel web está em `src/main/resources/static/` e é servido automaticamente 
 
 ### Ações
 
-| Método | URL | Descrição |
-|--------|-----|-----------|
-| POST | `/acoes` | Cadastra ação com cotação da API do mercado |
-| GET | `/acoes` | Lista ações |
-| GET | `/acoes/{id}` | Busca por id |
-| GET | `/acoes/ticker/{ticker}` | Busca por ticker |
-| PUT | `/acoes/{id}/atualizar-cotacao` | Atualiza cotação |
-
-**Exemplo ação brasileira:**
+| Método | Rota | Descrição | Status |
+|---|---|---|---|
+| POST | `/acoes` | Cadastra ação buscando a cotação no mercado | 201 |
+| GET | `/acoes` | Lista ações | 200 |
+| GET | `/acoes/{id}` | Busca por id | 200 |
+| GET | `/acoes/ticker/{ticker}` | Busca por ticker | 200 |
+| PUT | `/acoes/{id}/atualizar-cotacao` | Atualiza cotação, nome da empresa e data/hora | 200 |
 
 ```json
 {
   "ticker": "PETR4",
-  "mercado": "BRASIL"
+  "mercado": "BRASIL",
+  "corretoraId": 1
 }
 ```
 
-**Exemplo ação americana:**
+`mercado` aceita `BRASIL` ou `EUA`; `corretoraId` é opcional.
+
+### Operações
+
+| Método | Rota | Descrição | Status |
+|---|---|---|---|
+| POST | `/acoes/{id}/comprar` | Registra compra e recalcula o preço médio | 201 |
+| POST | `/acoes/{id}/vender` | Registra venda e apura o resultado realizado | 201 |
+| GET | `/acoes/{id}/operacoes` | Histórico da ação (mais recentes primeiro) | 200 |
+| GET | `/operacoes` | Histórico completo (mais recentes primeiro) | 200 |
 
 ```json
 {
-  "ticker": "AAPL",
-  "mercado": "EUA"
+  "quantidade": 100,
+  "precoUnitario": 38.50
 }
 ```
 
-## Frontend
+`precoUnitario` é opcional: quando omitido, usa-se a cotação atual da ação — se ela não estiver disponível, a operação é recusada com 422.
 
-O frontend é uma SPA (Single Page Application) servida como conteúdo estático pelo Spring Boot:
+---
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/main/resources/static/index.html` | Estrutura do painel |
-| `src/main/resources/static/styles.css` | Tema escuro moderno e responsivo |
-| `src/main/resources/static/app.js` | Lógica de consumo da API e interação |
-| `FrontendController.java` | Atalhos `/painel`, `/app`, `/dashboard` |
-
-A rota raiz `/` continua retornando o JSON de informações da API.
-
-## APIs externas utilizadas
-
-| Finalidade | API | URL base | Limitações |
-|------------|-----|----------|------------|
-| CNPJ / Receita | [Brasil API](https://brasilapi.com.br) | `https://brasilapi.com.br/api/cnpj/v1/{cnpj}` | Rate limit; dados dependem da base pública |
-| CEP | [Brasil API](https://brasilapi.com.br) | `https://brasilapi.com.br/api/cep/v2/{cep}` | CEP inexistente retorna 404 |
-| Validação mercado financeiro | CNAE via dados do CNPJ (Brasil API) | — | Critério acadêmico equivalente à CVM; CNAEs 6611/6612/6619 |
-| Cotação B3 | [brapi.dev](https://brapi.dev) | `https://brapi.dev/api/quote/{ticker}` | Requer token; limite de requisições no plano gratuito |
-| Cotação EUA | [Alpha Vantage](https://www.alphavantage.co) | `GLOBAL_QUOTE` | 5 req/min no plano gratuito; delay entre chamadas |
-
-## Arquitetura
-
-Camadas: `controller` → `service` → `repository` → `entity`, com `dto` e integrações isoladas por **ports/adapters**:
+## Modelo de domínio
 
 ```
-integration/
-  cnpj/   CnpjConsultaPort → BrasilApiCnpjAdapter
-  cep/    CepConsultaPort → BrasilApiCepAdapter
-  cvm/    CvmValidacaoPort → CnaeCvmValidacaoAdapter
-  cotacao/ CotacaoPort → BrapiCotacaoAdapter | AlphaVantageCotacaoAdapter
-           CotacaoServiceFacade (Strategy por mercado)
+Corretora 1 ──── 0..* Acao 1 ──── 0..* Operacao
 ```
 
-Tratamento de erros centralizado em `GlobalExceptionHandler`.
+| Entidade | Tabela | Campos principais |
+|---|---|---|
+| `Corretora` | `corretoras` | `cnpj` (único), `razaoSocial`, `nomeFantasia`, `email`, `telefone`, endereço (`cep`, `logradouro`, `numero`, `complemento`, `bairro`, `cidade`, `uf`), `situacaoCadastral`, `validadaNaCvm`, `dataCadastro` |
+| `Acao` | `acoes` | `ticker` (único), `nomeEmpresa`, `mercado`, `moeda`, `cotacaoAtual`, `dataHoraCotacao`, `corretoraRelacionada` (opcional), `quantidade`, `precoMedio`, `lucroPrejuizoRealizado` |
+| `Operacao` | `operacoes` | `acao`, `tipo`, `quantidade`, `precoUnitario`, `valorTotal`, `dataHora`, `resultado` (apenas em vendas), `precoMedioNaOperacao` |
 
-## Diagrama simplificado das entidades
+---
 
+## Front-end
+
+SPA servida como conteúdo estático pelo Spring Boot, em `src/main/resources/static/`:
+
+| Arquivo | Conteúdo |
+|---|---|
+| `index.html` | Estrutura do painel (visão geral, ações, operações, corretoras) |
+| `styles.css` | Estilos do painel |
+| `app.js` | Consumo da API na mesma origem |
+
+`FrontendController` mapeia `/painel`, `/app` e `/dashboard` para o `index.html`; a rota `/` continua devolvendo o JSON informativo da API.
+
+---
+
+## Testes
+
+```bash
+./mvnw test
 ```
-┌─────────────┐       opcional      ┌─────────────┐
-│  Corretora  │◄────────────────────│    Acao     │
-├─────────────┤                     ├─────────────┤
-│ id          │                     │ id          │
-│ cnpj (UK)   │                     │ ticker (UK) │
-│ razaoSocial │                     │ nomeEmpresa │
-│ cep, endereço│                    │ mercado     │
-│ validadaNaCvm│                    │ moeda       │
-│ dataCadastro │                    │ cotacaoAtual│
-└─────────────┘                     │ dataHoraCot.│
-                                    └─────────────┘
-```
 
-## Tratamento de falhas
+O projeto contém atualmente um teste de contexto (`DemoApplicationTests.contextLoads`).
 
-| Cenário | HTTP |
-|---------|------|
-| CNPJ/CEP/ticker não encontrado | 404 |
-| CNPJ inválido / não validado CVM / situação inativa | 422 |
-| Duplicidade CNPJ ou ticker | 409 |
-| API externa indisponível | 502 |
-| Limite de requisições (Brapi/Alpha Vantage) | 429 |
+---
+
+## Coleção Postman
+
+Há uma coleção em `postman/Carteira-de-Acao.postman_collection.json` para importar no Postman.

@@ -1,0 +1,308 @@
+{
+  "mvnw": {
+    "mtime": 1788302159.638621,
+    "seen": 1788302548.700589,
+    "ast_hash": "ab50dd89da7da2346b28003352eeeeeb",
+    "semantic_hash": "ab50dd89da7da2346b28003352eeeeeb"
+  },
+  "pom.xml": {
+    "mtime": 1788302159.6406085,
+    "seen": 1788302548.700589,
+    "ast_hash": "f8c2b676a4a8e3be78de6c6be706fbcb",
+    "semantic_hash": "f8c2b676a4a8e3be78de6c6be706fbcb"
+  },
+  "postman/Carteira-de-Acao.postman_collection.json": {
+    "mtime": 1788302159.6426206,
+    "seen": 1788302548.700589,
+    "ast_hash": "a235aee1873f33b0fd7009a839da4963",
+    "semantic_hash": "a235aee1873f33b0fd7009a839da4963"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/DemoApplication.java": {
+    "mtime": 1788302159.6476207,
+    "seen": 1788302548.700589,
+    "ast_hash": "4725e893903fbf054be706b7ee42767d",
+    "semantic_hash": "4725e893903fbf054be706b7ee42767d"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/config/RestClientConfig.java": {
+    "mtime": 1788302159.6486208,
+    "seen": 1788302548.700589,
+    "ast_hash": "c2e53d277c9986b3e2a6d8e53599e8f1",
+    "semantic_hash": "c2e53d277c9986b3e2a6d8e53599e8f1"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/controller/AcaoController.java": {
+    "mtime": 1788302159.65062,
+    "seen": 1788302548.700589,
+    "ast_hash": "3df3c77ccfec68ca72341c23d377b575",
+    "semantic_hash": "3df3c77ccfec68ca72341c23d377b575"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/controller/CorretoraController.java": {
+    "mtime": 1788302159.6516113,
+    "seen": 1788302548.700589,
+    "ast_hash": "8295407bd1c1c4ca7cf2df9864df16f4",
+    "semantic_hash": "8295407bd1c1c4ca7cf2df9864df16f4"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/controller/FrontendController.java": {
+    "mtime": 1788302159.6526203,
+    "seen": 1788302548.700589,
+    "ast_hash": "965988bfef203780731bf71c59b2ddb9",
+    "semantic_hash": "965988bfef203780731bf71c59b2ddb9"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/controller/HomeController.java": {
+    "mtime": 1788302159.653609,
+    "seen": 1788302548.700589,
+    "ast_hash": "f20f8a5f0214a5d79a35128b1bd63e00",
+    "semantic_hash": "f20f8a5f0214a5d79a35128b1bd63e00"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/controller/OperacaoController.java": {
+    "mtime": 1788302159.6546085,
+    "seen": 1788302548.700589,
+    "ast_hash": "dad3bf77f6a7f69bff8585a79ce5c6d3",
+    "semantic_hash": "dad3bf77f6a7f69bff8585a79ce5c6d3"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/dto/AcaoCadastroRequest.java": {
+    "mtime": 1788302159.6566083,
+    "seen": 1788302548.700589,
+    "ast_hash": "0e50c73afa676ca1be1838c26ddcc9d8",
+    "semantic_hash": "0e50c73afa676ca1be1838c26ddcc9d8"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/dto/AcaoResponse.java": {
+    "mtime": 1788302159.657609,
+    "seen": 1788302548.700589,
+    "ast_hash": "f49aa818d99f43f93603c5dc762262f3",
+    "semantic_hash": "f49aa818d99f43f93603c5dc762262f3"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/dto/CorretoraCadastroRequest.java": {
+    "mtime": 1788302159.657609,
+    "seen": 1788302548.700589,
+    "ast_hash": "4be2de49834c82a9697b02d1a9e17dfd",
+    "semantic_hash": "4be2de49834c82a9697b02d1a9e17dfd"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/dto/CorretoraResponse.java": {
+    "mtime": 1788302159.6586087,
+    "seen": 1788302548.700589,
+    "ast_hash": "ccc0b35867699a9b8561628c6d85482a",
+    "semantic_hash": "ccc0b35867699a9b8561628c6d85482a"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/dto/ErroResponse.java": {
+    "mtime": 1788302159.6596086,
+    "seen": 1788302548.700589,
+    "ast_hash": "5387212a0b2df86d695a81346de06fa7",
+    "semantic_hash": "5387212a0b2df86d695a81346de06fa7"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/dto/OperacaoRequest.java": {
+    "mtime": 1788302159.6606054,
+    "seen": 1788302548.700589,
+    "ast_hash": "ff67f5aad239e3734ce419af499aa504",
+    "semantic_hash": "ff67f5aad239e3734ce419af499aa504"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/dto/OperacaoResponse.java": {
+    "mtime": 1788302159.661605,
+    "seen": 1788302548.700589,
+    "ast_hash": "b6e951cdfae97a33fc825df1dc929b9d",
+    "semantic_hash": "b6e951cdfae97a33fc825df1dc929b9d"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/entity/Acao.java": {
+    "mtime": 1788302159.6636207,
+    "seen": 1788302548.700589,
+    "ast_hash": "c7ed5d8af2358d305ab72908558aee95",
+    "semantic_hash": "c7ed5d8af2358d305ab72908558aee95"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/entity/Corretora.java": {
+    "mtime": 1788302159.664621,
+    "seen": 1788302548.700589,
+    "ast_hash": "8460455248948f61a8a906c76ce99ed5",
+    "semantic_hash": "8460455248948f61a8a906c76ce99ed5"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/entity/Operacao.java": {
+    "mtime": 1788302159.6656091,
+    "seen": 1788302548.700589,
+    "ast_hash": "421347dc750d4e61a7316a9af9f1b42e",
+    "semantic_hash": "421347dc750d4e61a7316a9af9f1b42e"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/enums/Mercado.java": {
+    "mtime": 1788302159.6666086,
+    "seen": 1788302548.700589,
+    "ast_hash": "fe02ed6fac0b929c4f42aaaabffc65e2",
+    "semantic_hash": "fe02ed6fac0b929c4f42aaaabffc65e2"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/enums/TipoOperacao.java": {
+    "mtime": 1788302159.6676085,
+    "seen": 1788302548.700589,
+    "ast_hash": "ec1c4e54fd3c3563ffe8c9d4414cd774",
+    "semantic_hash": "ec1c4e54fd3c3563ffe8c9d4414cd774"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/exception/ConflitoException.java": {
+    "mtime": 1788302159.6696205,
+    "seen": 1788302548.700589,
+    "ast_hash": "904234c2cf67e0c9d933733af84eda15",
+    "semantic_hash": "904234c2cf67e0c9d933733af84eda15"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/exception/GlobalExceptionHandler.java": {
+    "mtime": 1788302159.6706207,
+    "seen": 1788302548.700589,
+    "ast_hash": "6c7eb295f2e4cf8a97bf5a6707e2c5ec",
+    "semantic_hash": "6c7eb295f2e4cf8a97bf5a6707e2c5ec"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/exception/IntegracaoExternaException.java": {
+    "mtime": 1788302159.6716266,
+    "seen": 1788302548.700589,
+    "ast_hash": "7bb238d6760fd2e9bab804a74e8cd4a5",
+    "semantic_hash": "7bb238d6760fd2e9bab804a74e8cd4a5"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/exception/LimiteRequisicoesException.java": {
+    "mtime": 1788302159.6716266,
+    "seen": 1788302548.700589,
+    "ast_hash": "1ff353dd1cc0d74d28754d54b69c8bd6",
+    "semantic_hash": "1ff353dd1cc0d74d28754d54b69c8bd6"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/exception/RecursoNaoEncontradoException.java": {
+    "mtime": 1788302159.673609,
+    "seen": 1788302548.700589,
+    "ast_hash": "bc6a4cecbe9165500cc8bf8a8b7c58e0",
+    "semantic_hash": "bc6a4cecbe9165500cc8bf8a8b7c58e0"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/exception/RegraNegocioException.java": {
+    "mtime": 1788302159.6746087,
+    "seen": 1788302548.700589,
+    "ast_hash": "be835a8aae01a1128f5ffeb962f822f4",
+    "semantic_hash": "be835a8aae01a1128f5ffeb962f822f4"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cep/BrasilApiCepAdapter.java": {
+    "mtime": 1788302159.676622,
+    "seen": 1788302548.700589,
+    "ast_hash": "5be44bc9dbd39187bdf1088f4894ce07",
+    "semantic_hash": "5be44bc9dbd39187bdf1088f4894ce07"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cep/CepConsultaPort.java": {
+    "mtime": 1788302159.6776092,
+    "seen": 1788302548.700589,
+    "ast_hash": "5e9b33b675fb03021da0ec891a62467d",
+    "semantic_hash": "5e9b33b675fb03021da0ec891a62467d"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cep/dto/DadosCepExterno.java": {
+    "mtime": 1788302159.6796207,
+    "seen": 1788302548.700589,
+    "ast_hash": "85fba35060af874cca7a0918273906dd",
+    "semantic_hash": "85fba35060af874cca7a0918273906dd"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cnpj/BrasilApiCnpjAdapter.java": {
+    "mtime": 1788302159.6806293,
+    "seen": 1788302548.700589,
+    "ast_hash": "430db5f2d960e18ce640d6bbbe71290c",
+    "semantic_hash": "430db5f2d960e18ce640d6bbbe71290c"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cnpj/CnpjConsultaPort.java": {
+    "mtime": 1788302159.681608,
+    "seen": 1788302548.700589,
+    "ast_hash": "db05508c8aaadfec7a5ce4fe5814904f",
+    "semantic_hash": "db05508c8aaadfec7a5ce4fe5814904f"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cnpj/dto/DadosCnpjExterno.java": {
+    "mtime": 1788302159.683627,
+    "seen": 1788302548.700589,
+    "ast_hash": "ae7ecbd4820bc4da9a5b3328de26e1f7",
+    "semantic_hash": "ae7ecbd4820bc4da9a5b3328de26e1f7"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cotacao/AlphaVantageCotacaoAdapter.java": {
+    "mtime": 1788302159.684609,
+    "seen": 1788302548.700589,
+    "ast_hash": "d5e1a4af131e95effef8a2f6f45fafcc",
+    "semantic_hash": "d5e1a4af131e95effef8a2f6f45fafcc"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cotacao/BrapiCotacaoAdapter.java": {
+    "mtime": 1788302159.6856084,
+    "seen": 1788302548.700589,
+    "ast_hash": "d7409008a90bbd34f07d639bb4890786",
+    "semantic_hash": "d7409008a90bbd34f07d639bb4890786"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cotacao/CotacaoPort.java": {
+    "mtime": 1788302159.6866071,
+    "seen": 1788302548.700589,
+    "ast_hash": "2dfe39c2fb3458646c3eb48ad4aeb91d",
+    "semantic_hash": "2dfe39c2fb3458646c3eb48ad4aeb91d"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cotacao/CotacaoServiceFacade.java": {
+    "mtime": 1788302159.68761,
+    "seen": 1788302548.700589,
+    "ast_hash": "453405a106af90b77e2ca923bd7cb3d8",
+    "semantic_hash": "453405a106af90b77e2ca923bd7cb3d8"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cotacao/dto/CotacaoExterna.java": {
+    "mtime": 1788302159.6896212,
+    "seen": 1788302548.700589,
+    "ast_hash": "6725c7803bc61d32267018bb6158db04",
+    "semantic_hash": "6725c7803bc61d32267018bb6158db04"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cvm/CnaeCvmValidacaoAdapter.java": {
+    "mtime": 1788302159.690623,
+    "seen": 1788302548.700589,
+    "ast_hash": "b22cffc9ff6f7c27086a45fc73fe753b",
+    "semantic_hash": "b22cffc9ff6f7c27086a45fc73fe753b"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/integration/cvm/CvmValidacaoPort.java": {
+    "mtime": 1788302159.69161,
+    "seen": 1788302548.700589,
+    "ast_hash": "a5dcbd463cb01e9d90dc4bf72b798827",
+    "semantic_hash": "a5dcbd463cb01e9d90dc4bf72b798827"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/repository/AcaoRepository.java": {
+    "mtime": 1788302159.693609,
+    "seen": 1788302548.700589,
+    "ast_hash": "69742ee2e5796de31b2134cbacc9a318",
+    "semantic_hash": "69742ee2e5796de31b2134cbacc9a318"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/repository/CorretoraRepository.java": {
+    "mtime": 1788302159.693609,
+    "seen": 1788302548.700589,
+    "ast_hash": "6e65e1456b1ca108fbda47e5a0adee50",
+    "semantic_hash": "6e65e1456b1ca108fbda47e5a0adee50"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/repository/OperacaoRepository.java": {
+    "mtime": 1788302159.6946108,
+    "seen": 1788302548.700589,
+    "ast_hash": "d49e6b04fdeda98b988becc55ea4953f",
+    "semantic_hash": "d49e6b04fdeda98b988becc55ea4953f"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/service/AcaoService.java": {
+    "mtime": 1788302159.696625,
+    "seen": 1788302548.700589,
+    "ast_hash": "4ff49b8007e9bbce9354a6c15505b063",
+    "semantic_hash": "4ff49b8007e9bbce9354a6c15505b063"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/service/CorretoraService.java": {
+    "mtime": 1788302159.6976168,
+    "seen": 1788302548.700589,
+    "ast_hash": "0dae1d6cf7d577f588674d6a9ab4a83e",
+    "semantic_hash": "0dae1d6cf7d577f588674d6a9ab4a83e"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/service/OperacaoService.java": {
+    "mtime": 1788302159.6986098,
+    "seen": 1788302548.700589,
+    "ast_hash": "486801bb17340cb2cf6d276f6956f40f",
+    "semantic_hash": "486801bb17340cb2cf6d276f6956f40f"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/util/CepUtil.java": {
+    "mtime": 1788302159.7006092,
+    "seen": 1788302548.700589,
+    "ast_hash": "486321cd1640d9401f15388419dffe50",
+    "semantic_hash": "486321cd1640d9401f15388419dffe50"
+  },
+  "src/main/java/com/Carteira_de_Acao/demo/util/CnpjUtil.java": {
+    "mtime": 1788302159.7016087,
+    "seen": 1788302548.700589,
+    "ast_hash": "ccfcf41b205356d49c1ed80c40e648a9",
+    "semantic_hash": "ccfcf41b205356d49c1ed80c40e648a9"
+  },
+  "src/main/resources/static/app.js": {
+    "mtime": 1788302159.7046206,
+    "seen": 1788302548.700589,
+    "ast_hash": "b8d37fba0567c52542117e49c220c5d4",
+    "semantic_hash": "b8d37fba0567c52542117e49c220c5d4"
+  },
+  "src/test/java/com/Carteira_de_Acao/demo/DemoApplicationTests.java": {
+    "mtime": 1788302159.7126088,
+    "seen": 1788302548.700589,
+    "ast_hash": "cb422b55296e57ce18a65aa62fdac5fe",
+    "semantic_hash": "cb422b55296e57ce18a65aa62fdac5fe"
+  }
+}

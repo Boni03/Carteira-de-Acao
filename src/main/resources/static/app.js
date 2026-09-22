@@ -167,14 +167,18 @@ function renderStats() {
     dash.innerHTML = `<div class="empty">Nenhuma ação cadastrada ainda. Vá em <b>Ações</b> para começar.</div>`;
     return;
   }
-  dash.innerHTML = recentes.map((a) => `
+  dash.innerHTML = recentes.map((a) => {
+    const temPosicao = (a.quantidade || 0) > 0;
+    return `
     <div class="mini-row">
       <span class="m-ticker">${esc(a.ticker)}</span>
       <span class="m-name">${esc(a.nomeEmpresa || "—")}</span>
       ${mercadoTag(a.mercado)}
-      <span class="m-qtd">${(a.quantidade || 0) > 0 ? esc(a.quantidade) + " un." : "<span style='color:var(--txt-mute)'>sem posição</span>"}</span>
+      <span class="m-qtd">${temPosicao ? esc(a.quantidade) + " un." : "<span style='color:var(--txt-mute)'>sem posição</span>"}</span>
+      <span class="m-avg">${temPosicao ? "PM " + esc(fmtMoeda(a.precoMedio, a.moeda)) : "<span style='color:var(--txt-mute)'>—</span>"}</span>
       <span class="m-price">${esc(fmtMoeda(a.cotacaoAtual, a.moeda))}</span>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 function nomeCorretora(id) {
@@ -246,12 +250,13 @@ function renderOperacoes() {
       <td>${tipoTag(o.tipo)}</td>
       <td class="num">${esc(o.quantidade)}</td>
       <td class="num price-cell">${esc(fmtMoeda(o.precoUnitario, o.moeda))}</td>
+      <td class="num price-cell">${o.precoMedio != null ? esc(fmtMoeda(o.precoMedio, o.moeda)) : '<span style="color:var(--txt-mute)">—</span>'}</td>
       <td class="num price-cell">${esc(fmtMoeda(o.valorTotal, o.moeda))}</td>
       <td class="num">${o.tipo === "VENDA" ? fmtResultado(o.resultado, o.moeda, o.resultadoPercentual) : '<span style="color:var(--txt-mute)">—</span>'}</td>
     </tr>`).join("");
 
   if (state.operacoes.length && !lista.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">Nenhum resultado para o filtro.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">Nenhum resultado para o filtro.</td></tr>`;
   }
 }
 
@@ -372,6 +377,9 @@ function detalheCorretoraHTML(c) {
       <div class="detail-item"><span class="k">Cidade / UF</span><span class="v">${esc(c.cidade || "—")}${c.uf ? " / " + esc(c.uf) : ""}</span></div>
       <div class="detail-item"><span class="k">CEP</span><span class="v">${esc(fmtCep(c.cep))}</span></div>
       <div class="detail-item"><span class="k">Cadastrada em</span><span class="v">${esc(fmtData(c.dataCadastro))}</span></div>
+    </div>
+    <div style="margin-top:22px; display:flex; gap:10px; flex-wrap:wrap">
+      <button class="btn btn-danger" data-delete-corretora="${c.id}">🗑 Excluir corretora</button>
     </div>`;
 }
 
@@ -548,6 +556,20 @@ async function submitCorretora(e) {
   }
 }
 
+async function excluirCorretora(id) {
+  const c = state.corretoras.find((x) => x.id === id);
+  const nome = c ? (c.nomeFantasia || c.razaoSocial) : `#${id}`;
+  if (!confirm(`Excluir a corretora "${nome}"? Essa ação não pode ser desfeita.`)) return;
+  try {
+    await api(`/corretoras/${id}`, { method: "DELETE" });
+    toast("Corretora excluída", nome, "ok");
+    fecharModal();
+    await carregarTudo();
+  } catch (err) {
+    toast("Não foi possível excluir", err.message, "err");
+  }
+}
+
 async function buscarCorretora(e) {
   e.preventDefault();
   const cnpj = onlyDigits($("#buscaCnpj").value);
@@ -612,6 +634,9 @@ function bind() {
       if (c) abrirModal(detalheCorretoraHTML(c));
       return;
     }
+
+    const delc = e.target.closest("[data-delete-corretora]");
+    if (delc) { excluirCorretora(Number(delc.dataset.deleteCorretora)); return; }
   });
 }
 

@@ -34,3 +34,4 @@ build/
 
 ### Chaves de API locais ###
 application-local.properties
+.env

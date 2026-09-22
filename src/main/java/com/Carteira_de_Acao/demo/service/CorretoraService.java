@@ -11,6 +11,7 @@ import com.Carteira_de_Acao.demo.integration.cep.dto.DadosCepExterno;
 import com.Carteira_de_Acao.demo.integration.cnpj.CnpjConsultaPort;
 import com.Carteira_de_Acao.demo.integration.cnpj.dto.DadosCnpjExterno;
 import com.Carteira_de_Acao.demo.integration.cvm.CvmValidacaoPort;
+import com.Carteira_de_Acao.demo.repository.AcaoRepository;
 import com.Carteira_de_Acao.demo.repository.CorretoraRepository;
 import com.Carteira_de_Acao.demo.util.CepUtil;
 import com.Carteira_de_Acao.demo.util.CnpjUtil;
@@ -22,16 +23,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class CorretoraService {
 
 	private final CorretoraRepository corretoraRepository;
+	private final AcaoRepository acaoRepository;
 	private final CnpjConsultaPort cnpjConsultaPort;
 	private final CepConsultaPort cepConsultaPort;
 	private final CvmValidacaoPort cvmValidacaoPort;
 
 	public CorretoraService(
 			CorretoraRepository corretoraRepository,
+			AcaoRepository acaoRepository,
 			CnpjConsultaPort cnpjConsultaPort,
 			CepConsultaPort cepConsultaPort,
 			CvmValidacaoPort cvmValidacaoPort) {
 		this.corretoraRepository = corretoraRepository;
+		this.acaoRepository = acaoRepository;
 		this.cnpjConsultaPort = cnpjConsultaPort;
 		this.cepConsultaPort = cepConsultaPort;
 		this.cvmValidacaoPort = cvmValidacaoPort;
@@ -107,5 +111,17 @@ public class CorretoraService {
 		return corretoraRepository.findByCnpj(cnpjDigitos)
 				.map(CorretoraResponse::from)
 				.orElseThrow(() -> new RecursoNaoEncontradoException("Corretora não encontrada: CNPJ " + cnpjDigitos));
+	}
+
+	@Transactional
+	public void excluir(Long id) {
+		if (!corretoraRepository.existsById(id)) {
+			throw new RecursoNaoEncontradoException("Corretora não encontrada: id " + id);
+		}
+		if (acaoRepository.existsByCorretoraRelacionadaId(id)) {
+			throw new RegraNegocioException(
+					"Não é possível excluir a corretora: há ações vinculadas a ela.");
+		}
+		corretoraRepository.deleteById(id);
 	}
 }
